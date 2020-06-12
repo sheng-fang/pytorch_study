@@ -24,9 +24,9 @@ anno_test_flt = pd.DataFrame([[x[0], int(x[1])] for x in anno_test],
                              columns=["img_name", "label"])
 
 train_ds = data_pipeline.OxfordDogCatDS(anno_train_flt, img_dir, img_shape)
-train_ds = iter(train_ds)
+# train_ds = iter(train_ds)
 train_dsld = torch.utils.data.DataLoader(
-    train_ds, batch_size=26, shuffle=True, num_workers=4)
+    train_ds, batch_size=10, shuffle=True, num_workers=4)
 
 transforms = torchvision.transforms.Compose(
     [torchvision.transforms.ToTensor,

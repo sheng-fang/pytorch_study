@@ -5,7 +5,8 @@ import numpy as np
 
 
 class OxfordDogCatDS(object):
-    def __init__(self, anno_df, img_dir, img_shape, transforms=None, img_ext=".jpg"):
+    def __init__(self, anno_df, img_dir, img_shape, transforms=None,
+                 img_ext=".jpg"):
         self.anno_df = anno_df
         self.img_dir = img_dir
         self.img_ext = img_ext

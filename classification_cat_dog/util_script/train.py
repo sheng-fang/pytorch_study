@@ -1,6 +1,5 @@
 import os
 import pathlib
-import itertools
 from datetime import datetime
 import logging
 
@@ -9,9 +8,6 @@ import pandas as pd
 import torch
 import torch.nn as nn
 import torchvision
-import matplotlib.pyplot as plt
-import cv2
-from PIL import Image
 from tqdm import tqdm
 
 from classification_cat_dog.src import data_pipeline
@@ -68,7 +64,7 @@ transforms = torchvision.transforms.Compose(
     [torchvision.transforms.Resize(300),
      torchvision.transforms.RandomCrop(224),
      torchvision.transforms.RandomHorizontalFlip(),
-     # torchvision.transforms.RandomVerticalFlip(),
+     torchvision.transforms.RandomVerticalFlip(),
      torchvision.transforms.ToTensor(),
      torchvision.transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
 
@@ -111,17 +107,6 @@ lr_end = 10
 lr_nb = 20
 dsloader = train_dsld
 optim = torch.optim.SGD(resnet.fc.parameters(), lr=LR, momentum=0.9)
-
-resnet, loss_list, lr_list = util.find_lr(
-    resnet, train_dsld, optim, criterion, device, lr_init=1e-2, lr_end=5,
-    lr_nb=20
-)
-
-plt.figure()
-plt.plot(lr_list, loss_list)
-plt.xlabel("LR")
-plt.ylabel("Training loss")
-plt.show()
 
 if os.path.exists(FC_TRAINED):
     resnet.load_state_dict(torch.load(FC_TRAINED))
@@ -173,21 +158,31 @@ else:
     torch.save(resnet.state_dict(), "fc_trained.pt")
 
 
-LR = 0.00001
+LR = 0.00005
 NB_EPO = 9
 BATCH_SIZE = 64
 optim = torch.optim.SGD(resnet.parameters(), lr=LR, momentum=0.9)
 
+# resnet, loss_list, lr_list = util.find_lr(
+#     resnet, train_dsld, optim, criterion, device, lr_init=1e-5, lr_end=0.01,
+#     nb_epoc=1
+# )
+#
+# plt.figure()
+# plt.plot(np.log10(np.asarray(lr_list)), loss_list)
+# plt.xlabel("LR")
+# plt.ylabel("Training loss")
+# plt.show()
+
 logger.info(
     "Set --> LR: {}, Batchsize: {}, Eporch: {}".format(LR, BATCH_SIZE, NB_EPO))
-
 
 for epo in range(NB_EPO):
     resnet.train()
     epo_loss = []
     preds = []
     labels = []
-    if epo == 2 * NB_EPO // 3:
+    if epo == NB_EPO // 2:
         for param in optim.param_groups:
             param["lr"] = LR / 10.
         logger.info("Set LR: {} -> {}".format(LR, LR / 10.))

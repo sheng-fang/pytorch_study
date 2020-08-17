@@ -1,7 +1,6 @@
 import logging
 
 import numpy as np
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
@@ -73,26 +72,26 @@ def calculate_roc(thresholds, sims, lables):
     return np.asarray(fprs), np.asarray(tprs)
 
 
-def find_lr(model, dsloader, optim, criterion, device, lr_list=None,
-            lr_init=None, lr_end=None, lr_nb=None):
-    if lr_list is None:
-        cond = (lr_init is not None
-                and lr_end is not None
-                and lr_nb is not None)
-        assert cond, "Input lr_init, lr_end, and lr_nb, when lr_list is None"
-        log_init = np.log(lr_init)
-        log_end = np.log(lr_end)
-        lr_list = np.arange(log_init, log_end, (log_end - log_init) / lr_nb)
-        lr_list = np.power(np.e, lr_list)
-    init_stat = model.state_dict().copy()
+def find_lr(model, dsloader, optim, criterion, device, lr_init=1e-6, lr_end=10.,
+            nb_epoc=1, num=None, alpha=0.):
+    if num is None:
+        num = len(dsloader) * nb_epoc
+
+    coef = (lr_end/lr_init) ** (1/num)
+
+    lr_list = []
+    tmp_lr = lr_init
     model.to(device)
     model.train()
     loss_list = []
-    for lr in lr_list:
-        for param in optim.param_groups:
-            param["lr"] = lr
-        tmp_loss = []
+    req_epoc = num // len(dsloader) + 1
+    step = 0
+    avg_loss = None
+    for i in range(req_epoc):
         for data, label in tqdm(iter(dsloader)):
+            for param in optim.param_groups:
+                param["lr"] = tmp_lr
+            lr_list.append(tmp_lr)
             data = data.to(device)
             label = label.to(device)
 
@@ -103,9 +102,15 @@ def find_lr(model, dsloader, optim, criterion, device, lr_list=None,
             loss.backward()
             optim.step()
 
-            tmp_loss.append(loss.item())
-        loss_list.append(np.mean(tmp_loss))
+            if avg_loss is None:
+                avg_loss = loss.item()
+            else:
+                avg_loss = alpha * avg_loss + (1 - alpha) * loss.item()
 
-    model.load_state_dict(init_stat)
+            loss_list.append(avg_loss)
 
-    return model, loss_list, lr_list
+            step += 1
+            tmp_lr *= coef
+
+            if step >= num:
+                return model, loss_list, lr_list

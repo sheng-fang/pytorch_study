@@ -9,8 +9,8 @@ import torch
 import torchvision
 
 
-def train_model(nb_epoch, dataloaders, model, opt, criterion, scheduler=None,
-                device=None):
+def train_model(nb_epoch, dataloaders, model, opt, criterion, device,
+                scheduler=None):
     """
     Function to train a model.
     Args:
@@ -26,8 +26,6 @@ def train_model(nb_epoch, dataloaders, model, opt, criterion, scheduler=None,
         model: a trained model
 
     """
-    if device is None:
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     st_start = time.time()
     best_model_wts = copy.deepcopy(model.state_dict())
     best_acc = 0.0

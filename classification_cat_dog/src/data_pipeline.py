@@ -2,6 +2,9 @@ import os
 
 import cv2
 import numpy as np
+from PIL import Image
+from tqdm import tqdm
+import torch
 
 
 class OxfordDogCatDS(object):
@@ -19,11 +22,11 @@ class OxfordDogCatDS(object):
     def __getitem__(self, idx):
         img_path = os.path.join(self.img_dir,
                                 self.anno_df.iloc[idx, 0] + self.img_ext)
-        label = self.anno_df.iloc[idx, 1]
-        img = cv2.imread(img_path)
-        img = cv2.resize(img, self.img_shape)
-        img = np.transpose(img)
+        label = self.anno_df.iloc[idx, 1] - 1
+        img = Image.open(img_path)
+        img = img.convert('RGB')
         if self.transforms is not None:
             img = self.transforms(img)
-
         return img, label
+
+
